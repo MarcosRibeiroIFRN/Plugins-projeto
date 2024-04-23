@@ -19,3 +19,11 @@ CREATE TABLE wp_subtemas (
     id INT AUTO_INCREMENT PRIMARY KEY,
     Nome VARCHAR(255)
 );
+CREATE TABLE IF NOT EXISTS wp_responsaveis (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    email VARCHAR(100),
+    area_atuacao VARCHAR(50) NOT NULL,
+    evento_id INT,
+    FOREIGN KEY (evento_id) REFERENCES wp_eventos(id)
+);
