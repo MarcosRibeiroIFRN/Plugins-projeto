@@ -602,24 +602,6 @@ function exibir_tabela_responsaveis_eventos() {
         </div>
     </div>
 
-    <script>
-        // Ao clicar no botão "Adicionar Novo Responsável", abrir o modal
-        document.getElementById('open-add-responsible-modal').addEventListener('click', function() {
-            document.getElementById('add-responsible-modal').style.display = 'block';
-        });
-
-        // Ao clicar no botão de fechar dentro do modal, fechar o modal
-        document.querySelector('#add-responsible-modal .close').addEventListener('click', function() {
-            document.getElementById('add-responsible-modal').style.display = 'none';
-        });
-
-        // Ao clicar fora do modal, fechar o modal
-        window.addEventListener('click', function(event) {
-            if (event.target == document.getElementById('add-responsible-modal')) {
-                document.getElementById('add-responsible-modal').style.display = 'none';
-            }
-        });
-    </script>
     <?php
 }
 
