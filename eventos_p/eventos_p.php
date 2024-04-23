@@ -1,16 +1,14 @@
-
+<head>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+<head>
 <?php
-/**
- * Plugin Name: gerenciador de eventos curadoriais 
- * Description: Pluggin desenvolvido com o propósito de estudar o desenvolvimentos de pluggins wordpress.
- * Version: 1.0
- * Requires at least: 5.6
- * Author: Davi Oliveira
- * License: GPL v2 or later
- * License URI: https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain: gerenciador-eventos
- * Domain Path: /languages
- */
+/*
+Plugin Name: Gerenciamento curadoriais 
+Description: Pluggin para estudos. 
+Version: 1.0
+Author: Davi e Marcos
+*/
+
 // Função para criar as páginas no painel de administração
 function criar_paginas_admin() {
     add_menu_page(
@@ -33,12 +31,15 @@ function exibir_pagina_eventos() {
         <h2 class="nav-tab-wrapper">
             <a href="?page=gerenciador-eventos&tab=eventos" class="nav-tab <?php echo isset($_GET['tab']) && $_GET['tab'] == 'eventos' ? 'nav-tab-active' : ''; ?>">Eventos Cadastrados</a>
             <a href="?page=gerenciador-eventos&tab=cadastro" class="nav-tab <?php echo isset($_GET['tab']) && $_GET['tab'] == 'cadastro' ? 'nav-tab-active' : ''; ?>">Cadastro de Eventos</a>
+            <a href="?page=gerenciador-eventos&tab=responsáveis" class="nav-tab <?php echo isset($_GET['tab']) && $_GET['tab'] == 'responsaveis' ? 'nav-tab-active' : ''; ?>">Responsáveis de Eventos</a>
         </h2>
 
         <?php
         if (isset($_GET['tab']) && $_GET['tab'] == 'cadastro') {
             exibir_formulario_adicionar_evento();
         } elseif (isset($_GET['tab']) && $_GET['tab'] == 'eventos') {
+            exibir_tabela_eventos();
+        } elseif (isset($_GET['tab']) && $_GET['tab'] == 'responsaveis') {
             exibir_tabela_eventos();
         }
         ?>
@@ -61,39 +62,50 @@ function exibir_formulario_adicionar_evento() {
         <input type="hidden" name="action" value="adicionar_evento">
         <!-- Campos do formulário de evento -->
         <label for="nome">Nome:</label><br>
-        <input type="text" id="nome" name="nome" required><br>
+        <input class='form-control' type="text" id="nome" name="nome" required><br>
+        
+        <label for="descricao">Descrição:</label><br>
+        <textarea class='form-control' id="descricao" name="descricao"></textarea><br>
+        
+        <label for="inicio">Início:</label><br>
+        <input class='form-control' type="date" id="inicio" name="inicio"required><br>
+        
+        <label for="fim">Fim:</label><br>
+        <input class='form-control' type="date" id="fim" name="fim"required><br>
+        
         <label for="tipo">Tipo:</label><br>
-        <select id="tipo" name="tipo" required>
+        <select class='form-control' id="tipo" name="tipo" required>
             <option value="">Selecionar duração </option>
             <option value="Longa Duração">Longa Duração</option>
             <option value="Temporária">Temporária</option>
         </select><br>
-        <label for="descricao">Descrição:</label><br>
-        <textarea id="descricao" name="descricao"></textarea><br>
-        <label for="inicio">Início:</label><br>
-        <input type="date" id="inicio" name="inicio"required><br>
-        <label for="fim">Fim:</label><br>
-        <input type="date" id="fim" name="fim"required><br>
+       
         <!-- Seleção de Tema -->
         <label for="tema">Tema:</label><br>
+        
         <select id="tema" name="tema"required>
             <option value="">Selecionar Tema</option>
             <?php foreach ($temas as $tema) : ?>
                 <option value="<?php echo $tema->id; ?>"><?php echo $tema->Nome; ?></option>
             <?php endforeach; ?>
-        </select><br>
-        <button id="open-theme-modal" type="button">Adicionar Tema</button><br><br>
+        </select>
+            
+        <button class='button-add' id="open-theme-modal" type="button">+</button><br>
+
         <!-- Seleção de Subtema -->
         <label for="subtema">Subtema:</label><br>
+        
         <select id="subtema" name="subtema"required>
-            <option value="">Selecionar Subtema</option>
+            <option value="">Selecionar Subtema</option>    
             <?php foreach ($subtemas as $subtema) : ?>
                 <option value="<?php echo $subtema->id; ?>"><?php echo $subtema->Nome; ?></option>
             <?php endforeach; ?>
-        </select><br>
-        <button id="open-subtema-modal" type="button">Adicionar Subtema</button><br><br><br><br><br><br>
+        </select>   
+        
+        <button class='button-add' id="open-subtema-modal" type="button">+</button><br><br><br><br><br><br>
+        
         <!-- Botões para cadastrar temas e subtemas -->
-        <button class="confirmar" value="Adicionar Evento">Adicionar Evento</button>
+        <button value="Adicionar Evento">Adicionar Evento</button>
     </form>
 </div>
 
@@ -173,7 +185,7 @@ function exibir_tabela_eventos() {
                         <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" onsubmit="return confirm('Tem certeza que deseja excluir este evento?');">
                             <input type="hidden" name="action" value="excluir_evento">
                             <input type="hidden" name="evento_id" value="<?php echo $evento->id; ?>">
-                            <button type="submit" class=" button-excluir">Excluir</button>
+                            <button type="submit" class="btn btn-danger btn-sm">Excluir</button>
                         </form>
                     </td>
                 </tr>
@@ -203,20 +215,32 @@ function processar_exclusao_evento() {
 
 add_action('admin_post_excluir_evento', 'processar_exclusao_evento');
 // Função auxiliar para obter o nome do tema por ID
+// Função auxiliar para obter o nome do tema por ID
 function obter_nome_tema_por_id($tema_id) {
     global $wpdb;
+    $table_eventos = $wpdb->prefix . 'eventos';
     $table_temas = $wpdb->prefix . 'temas';
-    $tema = $wpdb->get_row($wpdb->prepare("SELECT nome FROM $table_temas WHERE id = %d", $tema_id));
+    $tema = $wpdb->get_row($wpdb->prepare("
+        SELECT t.Nome 
+        FROM $table_eventos AS e
+        INNER JOIN $table_temas AS t ON e.tema_id = t.id
+        WHERE e.tema_id = %d", $tema_id));
     return $tema ? $tema->Nome : 'N/A';
 }
 
 // Função auxiliar para obter o nome do subtema por ID
 function obter_nome_subtema_por_id($subtema_id) {
     global $wpdb;
+    $table_eventos = $wpdb->prefix . 'eventos';
     $table_subtemas = $wpdb->prefix . 'subtemas';
-    $subtema = $wpdb->get_row($wpdb->prepare("SELECT nome FROM $table_subtemas WHERE id = %d", $subtema_id));
+    $subtema = $wpdb->get_row($wpdb->prepare("
+        SELECT s.Nome 
+        FROM $table_eventos AS e
+        INNER JOIN $table_subtemas AS s ON e.subtema_id = s.id
+        WHERE e.subtema_id = %d", $subtema_id));
     return $subtema ? $subtema->Nome : 'N/A';
 }
+
 
 // Função para processar o formulário de adicionar evento
 function processar_formulario_adicionar_evento() {
@@ -225,7 +249,7 @@ function processar_formulario_adicionar_evento() {
         $table_name = $wpdb->prefix . 'eventos';
 
         $nome = sanitize_text_field($_POST['nome']);
-        $tipo = sanitize_text_field($_POST['tipo']);
+        $tipo = in_array($_POST['tipo'], array('longa', 'curta')) ? $_POST['tipo'] : 'longa';
         $descricao = sanitize_textarea_field($_POST['descricao']);
         $inicio = sanitize_text_field($_POST['inicio']);
         $fim = sanitize_text_field($_POST['fim']);
@@ -248,10 +272,11 @@ function processar_formulario_adicionar_evento() {
             )
         );
 
-        wp_redirect(admin_url('admin.php?page=gerenciador-eventos'));
+        wp_redirect(admin_url('admin.php?page=gerenciador-eventos&tab=eventos'));
         exit;
     }
 }
+
 
 add_action('admin_post_adicionar_evento', 'processar_formulario_adicionar_evento');
 
@@ -314,7 +339,7 @@ function exibir_tabela_subtemas_cadastrados($subtemas) {
                         <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
                             <input type="hidden" name="action" value="excluir_subtema">
                             <input type="hidden" name="subtema_id" value="<?php echo $subtema->id; ?>">
-                            <button type="submit" class="button-excluir">Excluir</button>
+                            <button type="submit" class="btn btn-danger btn-sm">Excluir</button>
                         </form>
                         <!-- Adicionar aqui a opção de editar o subtema -->
                     </td>
@@ -404,7 +429,7 @@ function exibir_tabela_temas_cadastrados($temas) {
                         <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
                             <input type="hidden" name="action" value="excluir_tema">
                             <input type="hidden" name="tema_id" value="<?php echo $tema->id; ?>">
-                            <button type="submit" class=" button-excluir">Excluir</button>
+                            <button type="submit" class="btn btn-danger btn-sm">Excluir</button>
                         </form>
                     </td>
                 </tr>
