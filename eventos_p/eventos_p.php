@@ -31,7 +31,7 @@ function exibir_pagina_eventos() {
         <h2 class="nav-tab-wrapper">
             <a href="?page=gerenciador-eventos&tab=eventos" class="nav-tab <?php echo isset($_GET['tab']) && $_GET['tab'] == 'eventos' ? 'nav-tab-active' : ''; ?>">Eventos Cadastrados</a>
             <a href="?page=gerenciador-eventos&tab=cadastro" class="nav-tab <?php echo isset($_GET['tab']) && $_GET['tab'] == 'cadastro' ? 'nav-tab-active' : ''; ?>">Cadastro de Eventos</a>
-            <a href="?page=gerenciador-eventos&tab=responsáveis" class="nav-tab <?php echo isset($_GET['tab']) && $_GET['tab'] == 'responsaveis' ? 'nav-tab-active' : ''; ?>">Responsáveis de Eventos</a>
+            <a href="?page=gerenciador-eventos&tab=responsaveis" class="nav-tab <?php echo isset($_GET['tab']) && $_GET['tab'] == 'responsaveis' ? 'nav-tab-active' : ''; ?>">Responsáveis de Eventos</a>
         </h2>
 
         <?php
@@ -40,12 +40,11 @@ function exibir_pagina_eventos() {
         } elseif (isset($_GET['tab']) && $_GET['tab'] == 'eventos') {
             exibir_tabela_eventos();
         } elseif (isset($_GET['tab']) && $_GET['tab'] == 'responsaveis') {
-            exibir_tabela_eventos();
+            exibir_tabela_responsaveis_eventos(); // Chamando a função para exibir a tabela de responsáveis de eventos
         }
         ?>
     </div>
-
-    <?php
+<?php
 }
 
 // Função para exibir o formulário de adicionar evento
@@ -77,7 +76,7 @@ function exibir_formulario_adicionar_evento() {
         <select class='form-control' id="tipo" name="tipo" required>
             <option value="">Selecionar duração </option>
             <option value="Longa Duração">Longa Duração</option>
-            <option value="Temporária">Temporária</option>
+            <option value="Curta Duração">Curta Duração</option>
         </select><br>
        
         <!-- Seleção de Tema -->
@@ -155,7 +154,7 @@ function exibir_tabela_eventos() {
     $eventos = $wpdb->get_results("SELECT * FROM $table_eventos");
     ?>
     <h2>Eventos Cadastrados</h2>
-    <table class="wp-list-table widefat fixed striped">
+    <table class="wp-list-table ">
         <thead>
             <tr>
                 <th>ID</th>
@@ -329,7 +328,7 @@ add_action('admin_post_criar_subtema', 'processar_formulario_criar_subtema');
 function exibir_tabela_subtemas_cadastrados($subtemas) {
     ?>
     <!-- Tabela de Subtemas Cadastrados -->
-    <table class="wp-list-table widefat fixed striped">
+    <table class="wp-list-table ">
         <thead>
             <tr>
                 <th>ID</th>
@@ -419,7 +418,7 @@ function processar_formulario_criar_tema() {
 function exibir_tabela_temas_cadastrados($temas) {
     ?>
     <!-- Tabela de Temas Cadastrados -->
-    <table class="wp-list-table widefat fixed striped">
+    <table class="wp-list-table ">
         <thead>
             <tr>
                 <th>ID</th>
@@ -470,6 +469,181 @@ function processar_exclusao_tema() {
 }
 
 add_action('admin_post_excluir_tema', 'processar_exclusao_tema');
+
+
+//RESPONSÁVEIS
+// Função para exibir a tabela de responsáveis de eventos
+
+// Função para exibir o formulário de cadastro de responsáveis de eventos
+function exibir_formulario_cadastro_responsavel() {
+    ?>
+    <h2>Cadastro de Responsáveis de Eventos</h2>
+    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" id="form-cadastro-responsavel">
+        <input type="hidden" name="action" value="criar_responsavel_evento">
+        <label for="nome-responsavel">Nome do Responsável:</label><br>
+        <input type="text" id="nome-responsavel" name="nome-responsavel" required><br><br>
+        <label for="email-responsavel">E-mail do Responsável:</label><br>
+        <input type="email" id="email-responsavel" name="email-responsavel"><br><br>
+        <label for="area_atuacao">Área de Atuação:</label><br>
+        <select id="area_atuacao" name="area_atuacao" required>
+            <option value="">Selecione a área de atuação</option>
+            <option value="Curador">Curador</option>
+            <option value="Educador">Educador</option>
+            <option value="Conservador">Conservador</option>
+            <!-- Adicione outras opções conforme necessário -->
+        </select><br><br>
+        <label for="evento_id">Evento Relacionado:</label><br>
+        <select id="evento_id" name="evento_id" required>
+            <option value="">Selecione o Evento</option>
+            <?php
+            global $wpdb;
+            $eventos = $wpdb->get_results("SELECT ID ,Nome  FROM {$wpdb->prefix}eventos ");
+            foreach ($eventos as $evento) {
+                echo '<option value="' . $evento->ID . '">' . $evento->Nome . '</option>';
+            }
+            ?>
+        </select><br><br>
+        <input type="submit" value="Cadastrar">
+    </form>
+    <?php
+}
+
+
+// Função para obter os nomes de todos os eventos
+function obter_nomes_eventos() {
+    $args = array(
+        'post_type' => 'evento', // substitua 'evento' pelo nome correto do seu tipo de postagem de evento
+        'posts_per_page' => -1
+    );
+    $eventos = get_posts($args);
+    return $eventos;
+}
+
+// Função para processar o formulário de cadastrar responsável de evento
+function processar_formulario_criar_responsavel() {
+    if ($_SERVER["REQUEST_METHOD"] == "POST") {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'responsaveis';
+
+        $nome_responsavel = sanitize_text_field($_POST['nome-responsavel']);
+        $email_responsavel = sanitize_email($_POST['email-responsavel']);
+        $area_atuacao = sanitize_text_field($_POST['area_atuacao']);
+        $evento_id = intval($_POST['evento_id']); // ID do evento relacionado
+
+        $wpdb->insert(
+            $table_name,
+            array(
+                'nome' => $nome_responsavel,
+                'email' => $email_responsavel,
+                'area_atuacao' => $area_atuacao,
+                'evento_id' => $evento_id // Adicionando o ID do evento
+            ),
+            array(
+                '%s', // nome, email, area_atuacao são strings
+                '%s',
+                '%s',
+                '%d' // evento_id é um número
+            )
+        );
+
+        wp_redirect(admin_url('admin.php?page=gerenciador-eventos&tab=responsaveis'));
+        exit;
+    }
+}
+add_action('admin_post_criar_responsavel_evento', 'processar_formulario_criar_responsavel');
+
+
+// Função para exibir a tabela de responsáveis de eventos cadastrados
+function exibir_tabela_responsaveis_eventos() {
+    global $wpdb;
+    $table_responsaveis = $wpdb->prefix . 'responsaveis';
+    $responsaveis = $wpdb->get_results("SELECT * FROM $table_responsaveis");
+    ?>
+    <!-- Tabela de Responsáveis de Eventos Cadastrados -->
+    <div class="wrap">
+        <h2>Responsáveis de Eventos Cadastrados</h2>
+        <button id="open-add-responsible-modal" class="button button-primary">Adicionar Novo Responsável</button>
+        <br><br>
+        <table class="wp-list-table ">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nome</th>
+                    <th>E-mail</th>
+                    <th>Área de Atuação</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($responsaveis as $responsavel) : ?>
+                    <tr>
+                        <td><?php echo $responsavel->id; ?></td>
+                        <td><?php echo $responsavel->nome; ?></td>
+                        <td><?php echo $responsavel->email; ?></td>
+                        <td><?php echo $responsavel->area_atuacao; ?></td>
+                        <td>
+                            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+                                <input type="hidden" name="action" value="excluir_responsavel_evento">
+                                <input type="hidden" name="responsavel_id" value="<?php echo $responsavel->id; ?>">
+                                <button type="submit" class="btn btn-danger btn-sm">Excluir</button>
+                            </form>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Modal de Cadastro de Responsável -->
+    <div id="add-responsible-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <?php exibir_formulario_cadastro_responsavel(); ?>
+        </div>
+    </div>
+
+    <script>
+        // Ao clicar no botão "Adicionar Novo Responsável", abrir o modal
+        document.getElementById('open-add-responsible-modal').addEventListener('click', function() {
+            document.getElementById('add-responsible-modal').style.display = 'block';
+        });
+
+        // Ao clicar no botão de fechar dentro do modal, fechar o modal
+        document.querySelector('#add-responsible-modal .close').addEventListener('click', function() {
+            document.getElementById('add-responsible-modal').style.display = 'none';
+        });
+
+        // Ao clicar fora do modal, fechar o modal
+        window.addEventListener('click', function(event) {
+            if (event.target == document.getElementById('add-responsible-modal')) {
+                document.getElementById('add-responsible-modal').style.display = 'none';
+            }
+        });
+    </script>
+    <?php
+}
+
+
+
+
+// Função para processar a exclusão de responsável de evento
+function processar_exclusao_responsavel_evento() {
+    if ($_SERVER["REQUEST_METHOD"] == "POST") {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'responsaveis';
+        $responsavel_id = intval($_POST['responsavel_id']);
+
+        $wpdb->delete(
+            $table_name,
+            array('id' => $responsavel_id),
+            array('%d')
+        );
+
+        wp_redirect(admin_url('admin.php?page=gerenciador-eventos&tab=responsaveis'));
+        exit;
+    }
+}
+add_action('admin_post_excluir_responsavel_evento', 'processar_exclusao_responsavel_evento');
 
 
 
