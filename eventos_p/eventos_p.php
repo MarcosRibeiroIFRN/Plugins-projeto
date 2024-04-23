@@ -57,7 +57,7 @@ function exibir_formulario_adicionar_evento() {
     $subtemas = $wpdb->get_results("SELECT * FROM $table_subtemas");
     ?>
  <div class="wrap">
-    <h1>Cadastro de Eventos</h1>
+    <h1>Cadastro de Eventos</h1><br><br>
     <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
         <input type="hidden" name="action" value="adicionar_evento">
         <!-- Campos do formulário de evento -->
@@ -253,6 +253,8 @@ function processar_formulario_adicionar_evento() {
         $descricao = sanitize_textarea_field($_POST['descricao']);
         $inicio = sanitize_text_field($_POST['inicio']);
         $fim = sanitize_text_field($_POST['fim']);
+        $tema_id = intval($_POST['tema']); 
+        $subtema_id = intval($_POST['subtema']); 
 
         $wpdb->insert(
             $table_name,
@@ -262,13 +264,17 @@ function processar_formulario_adicionar_evento() {
                 'descricao' => $descricao,
                 'inicio' => $inicio,
                 'fim' => $fim,
+                'tema_id' => $tema_id, 
+                'subtema_id' => $subtema_id, 
             ),
             array(
-                '%s', // nome, tipo, descricao, inicio, fim são strings
+                '%s', 
                 '%s',
                 '%s',
                 '%s',
                 '%s',
+                '%d', 
+                '%d', 
             )
         );
 
@@ -278,9 +284,10 @@ function processar_formulario_adicionar_evento() {
 }
 
 
+
 add_action('admin_post_adicionar_evento', 'processar_formulario_adicionar_evento');
 
-// subtemas
+// SUBTEMAS
 function exibir_formulario_criar_subtema() {
     ?>
     <br>
@@ -372,7 +379,7 @@ add_action('admin_post_excluir_subtema', 'processar_exclusao_subtema');
 
 
 
-//temas
+//TEMAS
 function exibir_formulario_criar_tema() {
     ?>
     <div class="wrap">
